@@ -24,12 +24,12 @@ export function formatDateShort(date: string): string {
 }
 
 export const ORDER_STATUSES: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'En attente', color: 'text-yellow-700', bg: 'bg-yellow-50' },
-  validated: { label: 'Validée', color: 'text-blue-700', bg: 'bg-blue-50' },
-  preparing: { label: 'En préparation', color: 'text-blue-700', bg: 'bg-blue-50' },
-  ready: { label: 'Prête', color: 'text-green-700', bg: 'bg-green-50' },
-  picked_up: { label: 'Récupérée', color: 'text-purple-700', bg: 'bg-purple-50' },
-  delivering: { label: 'En livraison', color: 'text-orange-700', bg: 'bg-orange-50' },
-  delivered: { label: 'Livrée', color: 'text-green-700', bg: 'bg-green-100' },
-  cancelled: { label: 'Annulée', color: 'text-red-700', bg: 'bg-red-50' },
+  pending: { label: 'En attente', color: '#92400e', bg: '#fef3c7' },
+  validated: { label: 'Validée', color: '#1e40af', bg: '#dbeafe' },
+  preparing: { label: 'En préparation', color: '#3730a3', bg: '#e0e7ff' },
+  ready: { label: 'Prête', color: '#166534', bg: '#dcfce7' },
+  picked_up: { label: 'Récupérée', color: '#6b21a8', bg: '#f3e8ff' },
+  delivering: { label: 'En livraison', color: '#c2410c', bg: '#fed7aa' },
+  delivered: { label: 'Livrée', color: '#166534', bg: '#bbf7d0' },
+  cancelled: { label: 'Annulée', color: '#991b1b', bg: '#fee2e2' },
 }

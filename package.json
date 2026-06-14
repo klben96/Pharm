@@ -2,27 +2,36 @@
   "name": "pharmacie-domicile",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
+  "main": "App.tsx",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "expo start --web --port 5173",
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build": "expo export --platform web"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~3.2.3",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/stack": "^6.4.1",
     "@supabase/supabase-js": "^2.39.0",
-    "lucide-react": "^0.344.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0"
+    "expo": "~51.0.28",
+    "expo-status-bar": "~1.12.1",
+    "lucide-react-native": "^0.344.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-safe-area-context": "4.10.5",
+    "react-native-screens": "~3.34.0",
+    "react-native-svg": "15.2.0",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-web": "~0.19.10"
   },
   "devDependencies": {
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.0"
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.79",
+    "typescript": "~5.3.3"
   }
 }
