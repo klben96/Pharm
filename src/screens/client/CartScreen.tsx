@@ -11,6 +11,8 @@ import {
   Platform,
 } from 'react-native';
 import { Trash2, ShoppingCart, Plus, Minus } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { formatXOF } from '../../lib/utils';
 
@@ -21,46 +23,27 @@ type CartItem = {
   quantity: number;
   price_xof: number;
   pharmacy_name: string;
+  requires_prescription: boolean;
 };
 
+const DELIVERY_FEE = 500;
+
 const CartScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const { profile } = useAuth();
   const { items = [], removeItem, updateQuantity, total = 0, itemCount = 0 } = useCart();
   const [processing, setProcessing] = useState(false);
 
-  const handleCheckout = async () => {
+  const insuranceDiscount = profile && 'insurance_rate' in profile ? (profile.insurance_rate as number) * total : 0;
+  const finalTotal = total + DELIVERY_FEE - insuranceDiscount;
+
+  const handleCheckout = () => {
     if (itemCount === 0) {
       Alert.alert('Panier vide', 'Ajoutez des produits avant de commander');
       return;
     }
 
-    setProcessing(true);
-    try {
-      Alert.alert(
-        'Commande confirmée',
-        `Commande passée avec succès. Total: ${formatXOF(total)}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => setProcessing(false),
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Erreur', 'Une erreur est survenue lors de la commande');
-      setProcessing(false);
-    }
-  };
-
-  const handleRemoveItem = (productId: string) => {
-    removeItem(productId);
-  };
-
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      handleRemoveItem(productId);
-      return;
-    }
-    updateQuantity(productId, newQuantity);
+    navigation.navigate('Checkout');
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
@@ -70,21 +53,28 @@ const CartScreen: React.FC = () => {
       </View>
 
       <View style={styles.itemInfo}>
-        <Text style={styles.itemName}>{item.product_name}</Text>
+        <View style={styles.itemNameRow}>
+          <Text style={styles.itemName}>{item.product_name}</Text>
+          {item.requires_prescription && (
+            <View style={styles.prescriptionBadge}>
+              <Text style={styles.prescriptionBadgeText}>Ordonnance</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.itemBrand}>{item.brand}</Text>
         <Text style={styles.itemPharmacy}>{item.pharmacy_name}</Text>
       </View>
 
       <View style={styles.quantityControl}>
         <TouchableOpacity
-          onPress={() => handleQuantityChange(item.product_id, item.quantity - 1)}
+          onPress={() => updateQuantity(item.product_id, item.quantity - 1)}
           style={styles.quantityButton}
         >
           <Minus size={14} color="#64748b" strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.quantityText}>{item.quantity}</Text>
         <TouchableOpacity
-          onPress={() => handleQuantityChange(item.product_id, item.quantity + 1)}
+          onPress={() => updateQuantity(item.product_id, item.quantity + 1)}
           style={styles.quantityButton}
         >
           <Plus size={14} color="#64748b" strokeWidth={2.5} />
@@ -98,7 +88,7 @@ const CartScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity
-        onPress={() => handleRemoveItem(item.product_id)}
+        onPress={() => removeItem(item.product_id)}
         style={styles.deleteButton}
       >
         <Trash2 color="#dc2626" size={18} strokeWidth={1.5} />
@@ -144,21 +134,37 @@ const CartScreen: React.FC = () => {
             />
 
             <View style={styles.footer}>
-              <View style={styles.totalSection}>
+              <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Sous-total:</Text>
                 <Text style={styles.totalAmount}>{formatXOF(total)}</Text>
               </View>
 
+              {insuranceDiscount > 0 && (
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Assurance:</Text>
+                  <Text style={styles.discountAmount}>-{formatXOF(insuranceDiscount)}</Text>
+                </View>
+              )}
+
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Livraison:</Text>
+                <Text style={styles.totalAmount}>{formatXOF(DELIVERY_FEE)}</Text>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.totalRow}>
+                <Text style={styles.finalTotalLabel}>Total:</Text>
+                <Text style={styles.finalTotalAmount}>{formatXOF(finalTotal)}</Text>
+              </View>
+
               <TouchableOpacity
-                style={[
-                  styles.checkoutButton,
-                  processing && styles.checkoutButtonDisabled,
-                ]}
+                style={[styles.checkoutButton, processing && styles.checkoutButtonDisabled]}
                 onPress={handleCheckout}
                 disabled={processing || itemCount === 0}
               >
                 <Text style={styles.checkoutButtonText}>
-                  {processing ? 'Traitement...' : 'Passer la commande'}
+                  {processing ? 'Traitement...' : 'Procéder au paiement'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -236,11 +242,27 @@ const styles = StyleSheet.create({
   itemInfo: {
     flex: 1,
   },
+  itemNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
   itemName: {
     fontSize: 13,
     fontWeight: '600',
     color: '#0f172a',
-    marginBottom: 2,
+  },
+  prescriptionBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: '#fef3c7',
+    borderRadius: 4,
+  },
+  prescriptionBadgeText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#92400e',
   },
   itemBrand: {
     fontSize: 11,
@@ -314,23 +336,44 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
-  totalSection: {
+  totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   totalLabel: {
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  totalAmount: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#0f172a',
   },
-  totalAmount: {
+  discountAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#16a34a',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginVertical: 8,
+  },
+  finalTotalLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  finalTotalAmount: {
     fontSize: 18,
     fontWeight: '700',
     color: '#2563eb',
   },
   checkoutButton: {
+    marginTop: 12,
     paddingVertical: 14,
     backgroundColor: '#2563eb',
     borderRadius: 8,

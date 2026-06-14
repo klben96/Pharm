@@ -8,22 +8,26 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Lock } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { formatXOF, formatDate, ORDER_STATUSES } from '../../lib/utils';
 
-type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled';
+type OrderStatus = 'pending' | 'validated' | 'preparing' | 'ready' | 'picked_up' | 'delivering' | 'delivered' | 'cancelled';
 
 type Order = {
   id: string;
   created_at: string;
   total_amount: number;
   status: OrderStatus;
+  delivery_pin?: string;
 };
 
 type TabType = 'active' | 'history';
 
 const OrdersScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { session } = useAuth();
   const [selectedTab, setSelectedTab] = useState<TabType>('active');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -40,11 +44,11 @@ const OrdersScreen: React.FC = () => {
     try {
       let query = supabase
         .from('orders')
-        .select('id, created_at, total_amount, status')
+        .select('id, created_at, total_amount, status, delivery_pin')
         .eq('client_id', session.user.id);
 
       if (selectedTab === 'active') {
-        query = query.in('status', ['pending', 'confirmed', 'preparing', 'ready', 'delivering']);
+        query = query.in('status', ['pending', 'validated', 'preparing', 'ready', 'picked_up', 'delivering']);
       } else {
         query = query.in('status', ['delivered', 'cancelled']);
       }
@@ -60,56 +64,41 @@ const OrdersScreen: React.FC = () => {
     }
   };
 
-  const getStatusBadgeStyle = (status: OrderStatus) => {
-    const statusStyles: Record<OrderStatus, { bg: string; text: string }> = {
-      pending: { bg: '#fef3c7', text: '#92400e' },
-      confirmed: { bg: '#dbeafe', text: '#1e40af' },
-      preparing: { bg: '#e0e7ff', text: '#3730a3' },
-      ready: { bg: '#dcfce7', text: '#166534' },
-      delivering: { bg: '#fed7aa', text: '#92400e' },
-      delivered: { bg: '#dcfce7', text: '#166534' },
-      cancelled: { bg: '#fee2e2', text: '#991b1b' },
-    };
-    return statusStyles[status] || { bg: '#f3f4f6', text: '#374151' };
-  };
-
-  const getStatusLabel = (status: OrderStatus): string => {
-    const statusLabels: Record<OrderStatus, string> = {
-      pending: 'En attente',
-      confirmed: 'Confirmée',
-      preparing: 'En préparation',
-      ready: 'Prête',
-      delivering: 'En livraison',
-      delivered: 'Livrée',
-      cancelled: 'Annulée',
-    };
-    return statusLabels[status] || status;
-  };
-
   const renderOrderCard = ({ item }: { item: Order }) => {
-    const statusStyle = getStatusBadgeStyle(item.status);
     const shortId = item.id.substring(0, 8).toUpperCase();
+    const statusInfo = ORDER_STATUSES[item.status] || ORDER_STATUSES.pending;
+    const showPinBadge = item.status === 'delivering' && item.delivery_pin;
 
     return (
-      <TouchableOpacity style={styles.orderCard}>
+      <TouchableOpacity
+        style={styles.orderCard}
+        onPress={() => navigation.navigate('OrderTracking', { orderId: item.id })}
+      >
         <View style={styles.orderHeader}>
-          <View>
+          <View style={styles.orderHeaderLeft}>
             <Text style={styles.orderId}>Commande #{shortId}</Text>
             <Text style={styles.orderDate}>{formatDate(item.created_at)}</Text>
           </View>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}
-          >
-            <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
-              {getStatusLabel(item.status)}
-            </Text>
+          <View style={styles.orderHeaderRight}>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+            >
+              <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
+            </View>
+            {showPinBadge && (
+              <View style={styles.pinBadge}>
+                <Lock size={12} color="#ffffff" strokeWidth={2} />
+              </View>
+            )}
           </View>
         </View>
 
         <View style={styles.orderFooter}>
           <Text style={styles.orderTotal}>{formatXOF(item.total_amount)}</Text>
-          <TouchableOpacity style={styles.detailsButton}>
-            <Text style={styles.detailsButtonText}>Détails</Text>
+          <TouchableOpacity style={styles.trackButton}>
+            <Text style={styles.trackButtonText}>Suivre</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -249,6 +238,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 12,
   },
+  orderHeaderLeft: {
+    flex: 1,
+  },
   orderId: {
     fontSize: 14,
     fontWeight: '600',
@@ -259,6 +251,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
   },
+  orderHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -267,6 +264,14 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  pinBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f59e0b',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   orderFooter: {
     flexDirection: 'row',
@@ -278,14 +283,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2563eb',
   },
-  detailsButton: {
+  trackButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#2563eb',
   },
-  detailsButtonText: {
+  trackButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#2563eb',

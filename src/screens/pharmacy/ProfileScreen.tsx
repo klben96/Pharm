@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Building2, Link2, LogOut } from 'lucide-react-native';
+import { Building2, Clock, Bell, LogOut } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ProfileScreen: React.FC = () => {
@@ -42,10 +42,6 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
-  const pharmacyInitial = profile?.full_name
-    ? profile.full_name.charAt(0).toUpperCase()
-    : 'P';
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -53,39 +49,76 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Profil</Text>
         </View>
 
+        {/* Profile Hero Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Building2 size={32} color="#ffffff" strokeWidth={1.5} />
+            <Building2 size={40} color="#ffffff" strokeWidth={1.5} />
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{profile?.full_name || 'Pharmacie'}</Text>
-            <Text style={styles.profilePhone}>
-              {profile?.phone || 'Non renseigné'}
-            </Text>
+            <View style={styles.badgeRow}>
+              <View style={styles.pharmacyBadge}>
+                <Text style={styles.badgeText}>Pharmacie</Text>
+              </View>
+            </View>
           </View>
         </View>
 
+        {/* Contact & Details */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.portailLink}>
-            <Link2 size={20} color="#16a34a" strokeWidth={1.5} />
-            <View style={styles.linkInfo}>
-              <Text style={styles.linkTitle}>Portail Pharmacien</Text>
-              <Text style={styles.linkSubtitle}>Accédez à votre interface complète</Text>
+          <Text style={styles.sectionTitle}>Informations pharmacie</Text>
+          <View style={styles.infoCard}>
+            {profile?.phone && (
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Téléphone</Text>
+                <Text style={styles.infoValue}>{profile.phone}</Text>
+              </View>
+            )}
+            {profile?.phone && (
+              <View style={[styles.infoItem, styles.infoItemBorder]}>
+                <Text style={styles.infoLabel}>Horaires</Text>
+                <Text style={styles.infoValue}>Lun - Dim: 08h - 20h</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Menu Items */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Préférences</Text>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Clock size={20} color="#16a34a" strokeWidth={2} />
+            <View style={styles.menuItemContent}>
+              <Text style={styles.menuItemTitle}>Horaires d'ouverture</Text>
+              <Text style={styles.menuItemSubtitle}>Gérez vos heures de disponibilité</Text>
             </View>
-            <Text style={styles.linkArrow}>›</Text>
+            <Text style={styles.menuItemArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Bell size={20} color="#16a34a" strokeWidth={2} />
+            <View style={styles.menuItemContent}>
+              <Text style={styles.menuItemTitle}>Notifications</Text>
+              <Text style={styles.menuItemSubtitle}>Alertes de commandes et mises à jour</Text>
+            </View>
+            <Text style={styles.menuItemArrow}>›</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
         >
-          <LogOut size={20} color="#ffffff" strokeWidth={1.5} />
+          <LogOut size={20} color="#ffffff" strokeWidth={2} />
           <Text style={styles.logoutButtonText}>Se déconnecter</Text>
         </TouchableOpacity>
 
+        {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Pharmacie à Domicile v1.0</Text>
+          <Text style={styles.footerVersion}>MediDom Pharmacy v1.0</Text>
+          <Text style={styles.footerSubtext}>Application de gestion pour pharmacies</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -105,8 +138,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#dcfce7',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#0f172a',
   },
   profileCard: {
@@ -114,40 +147,84 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginVertical: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#dcfce7',
-    gap: 12,
+    gap: 14,
   },
   avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#16a34a',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 2,
+    marginBottom: 6,
   },
-  profilePhone: {
-    fontSize: 12,
-    color: '#64748b',
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pharmacyBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#dcfce7',
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16a34a',
   },
   section: {
     marginHorizontal: 16,
     marginBottom: 20,
   },
-  portailLink: {
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 10,
+  },
+  infoCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#dcfce7',
+    overflow: 'hidden',
+  },
+  infoItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  infoItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#dcfce7',
+  },
+  infoLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
@@ -156,22 +233,23 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#dcfce7',
+    marginBottom: 10,
     gap: 12,
   },
-  linkInfo: {
+  menuItemContent: {
     flex: 1,
   },
-  linkTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  menuItemTitle: {
+    fontSize: 13,
+    fontWeight: '700',
     color: '#0f172a',
-    marginBottom: 2,
   },
-  linkSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
+  menuItemSubtitle: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 2,
   },
-  linkArrow: {
+  menuItemArrow: {
     fontSize: 20,
     color: '#cbd5e1',
     fontWeight: '300',
@@ -181,24 +259,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 16,
-    marginVertical: 16,
-    paddingVertical: 12,
+    marginVertical: 20,
+    paddingVertical: 14,
     backgroundColor: '#dc2626',
-    borderRadius: 8,
-    gap: 8,
+    borderRadius: 10,
+    gap: 10,
   },
   logoutButtonText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#ffffff',
   },
   footer: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 24,
   },
-  footerText: {
-    fontSize: 12,
+  footerVersion: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  footerSubtext: {
+    fontSize: 11,
     color: '#94a3b8',
+    marginTop: 4,
   },
 });
 

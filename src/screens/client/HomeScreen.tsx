@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,20 +8,23 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import {
   Bell,
   MapPin,
   Search,
+  Camera,
   Pill,
-  Thermometer,
-  Heart,
   Zap,
-  Droplet,
-  Star,
+  Shield,
+  Heart,
+  Sun,
+  FileText,
 } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 import { supabase } from '../../lib/supabase';
 import { formatXOF } from '../../lib/utils';
 
@@ -30,8 +33,7 @@ type Product = {
   name: string;
   brand: string;
   price_xof: number;
-  rating: number;
-  stock_quantity: number;
+  requires_prescription: boolean;
 };
 
 type Pharmacy = {
@@ -46,35 +48,41 @@ type Category = {
   name: string;
   icon: React.ReactNode;
   color: string;
+  route?: string;
 };
 
 const CATEGORIES: Category[] = [
-  { id: '1', name: 'Paracétamol', icon: <Pill size={24} />, color: '#2563eb' },
-  { id: '2', name: 'Vitamines', icon: <Thermometer size={24} />, color: '#06b6d4' },
-  { id: '3', name: 'Antibiotiques', icon: <Heart size={24} />, color: '#ec4899' },
-  { id: '4', name: 'Antalgiques', icon: <Zap size={24} />, color: '#f59e0b' },
-  { id: '5', name: 'Dermato', icon: <Droplet size={24} />, color: '#14b8a6' },
+  { id: '1', name: 'Paracétamol', icon: <Pill size={24} color="#ffffff" />, color: '#2563eb' },
+  { id: '2', name: 'Vitamines', icon: <Zap size={24} color="#ffffff" />, color: '#06b6d4' },
+  { id: '3', name: 'Antibiotiques', icon: <Shield size={24} color="#ffffff" />, color: '#dc2626' },
+  { id: '4', name: 'Antalgiques', icon: <Heart size={24} color="#ffffff" />, color: '#ec4899' },
+  { id: '5', name: 'Ordonnance', icon: <FileText size={24} color="#ffffff" />, color: '#7c3aed', route: 'Ordonnance' },
+  { id: '6', name: 'Dermatologie', icon: <Sun size={24} color="#ffffff" />, color: '#f97316' },
 ];
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { profile } = useAuth();
+  const { addItem } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingPharmacies, setLoadingPharmacies] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchProducts();
-    fetchPharmacies();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+      fetchPharmacies();
+    }, [])
+  );
 
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, brand, price_xof, rating, stock_quantity')
+        .select('id, name, brand, price_xof, requires_prescription')
         .limit(10);
 
       if (error) throw error;
@@ -102,6 +110,31 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    Promise.all([fetchProducts(), fetchPharmacies()]).finally(() => setRefreshing(false));
+  }, []);
+
+  const handleAddProduct = (product: Product) => {
+    addItem({
+      product_id: product.id,
+      product_name: product.name,
+      brand: product.brand,
+      price_xof: product.price_xof,
+      quantity: 1,
+      image_url: null,
+      requires_prescription: product.requires_prescription,
+      pharmacy_id: 'demo-pharmacy',
+      pharmacy_name: 'Pharmacie Demo',
+    });
+  };
+
+  const handleCategoryPress = (category: Category) => {
+    if (category.route) {
+      navigation.navigate(category.route);
+    }
+  };
+
   const renderProductCard = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
       <View style={styles.productImagePlaceholder}>
@@ -110,16 +143,13 @@ const HomeScreen: React.FC = () => {
         </Text>
       </View>
       <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productBrand}>{item.brand}</Text>
-        <View style={styles.productFooter}>
-          <Text style={styles.productPrice}>{formatXOF(item.price_xof)}</Text>
-          <View style={styles.rating}>
-            <Star size={14} color="#f59e0b" fill="#f59e0b" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.addButton}>
+        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+        <Text style={styles.productBrand} numberOfLines={1}>{item.brand}</Text>
+        <Text style={styles.productPrice}>{formatXOF(item.price_xof)}</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => handleAddProduct(item)}
+        >
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>
       </View>
@@ -127,68 +157,84 @@ const HomeScreen: React.FC = () => {
   );
 
   const renderCategoryChip = ({ item }: { item: Category }) => (
-    <TouchableOpacity style={styles.categoryChip}>
+    <TouchableOpacity
+      style={styles.categoryChip}
+      onPress={() => handleCategoryPress(item)}
+    >
       <View style={[styles.categoryIcon, { backgroundColor: item.color }]}>
         {item.icon}
       </View>
-      <Text style={styles.categoryName}>{item.name}</Text>
+      <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
     </TouchableOpacity>
   );
 
   const renderPharmacyCard = ({ item }: { item: Pharmacy }) => (
     <View style={styles.pharmacyCard}>
       <View style={styles.pharmacyHeader}>
-        <Text style={styles.pharmacyName}>{item.name}</Text>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: item.is_active ? '#dcfce7' : '#fee2e2' },
-          ]}
-        >
-          <Text
+        <View style={styles.pharmacyTitleSection}>
+          <Text style={styles.pharmacyName}>{item.name}</Text>
+          <View
             style={[
-              styles.statusText,
-              { color: item.is_active ? '#16a34a' : '#dc2626' },
+              styles.statusBadge,
+              { backgroundColor: item.is_active ? '#dcfce7' : '#fee2e2' },
             ]}
           >
-            {item.is_active ? 'Ouvert' : 'Fermé'}
-          </Text>
+            <Text
+              style={[
+                styles.statusText,
+                { color: item.is_active ? '#16a34a' : '#dc2626' },
+              ]}
+            >
+              {item.is_active ? 'Ouvert' : 'Fermé'}
+            </Text>
+          </View>
         </View>
       </View>
       <Text style={styles.pharmacyAddress}>{item.address}</Text>
+      <Text style={styles.pharmacyDistance}>0.8 km</Text>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View style={styles.header}>
           <View style={styles.greeting}>
             <Text style={styles.greetingText}>
-              Bonjour, {profile?.full_name || 'Client'}
+              Bonjour {profile?.full_name || 'Client'}
             </Text>
-            <Text style={styles.greetingTime}>Trouvez vos médicaments</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
             <Bell size={24} color="#2563eb" strokeWidth={1.5} />
+            <View style={styles.notificationBadge} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.locationChip}>
           <MapPin size={16} color="#2563eb" strokeWidth={2} />
-          <Text style={styles.locationText}>Dakar, Sénégal</Text>
+          <Text style={styles.locationText}>Abidjan, Cocody</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.searchBar}
-          onPress={() => navigation.navigate('Search')}
-        >
-          <Search size={20} color="#64748b" strokeWidth={2} />
-          <Text style={styles.searchPlaceholder}>Chercher un médicament</Text>
-        </TouchableOpacity>
+        <View style={styles.searchRowContainer}>
+          <TouchableOpacity
+            style={styles.searchBar}
+            onPress={() => navigation.navigate('Search')}
+          >
+            <Search size={20} color="#94a3b8" strokeWidth={2} />
+            <Text style={styles.searchPlaceholder}>Rechercher un médicament...</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cameraButton}
+            onPress={() => navigation.navigate('Ordonnance')}
+          >
+            <Camera size={20} color="#ffffff" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégories</Text>
           <FlatList
             data={CATEGORIES}
             renderItem={renderCategoryChip}
@@ -196,11 +242,12 @@ const HomeScreen: React.FC = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}
+            scrollEnabled={false}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Produits en vedette</Text>
+          <Text style={styles.sectionTitle}>Médicaments populaires</Text>
           {loadingProducts ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#2563eb" />
@@ -213,6 +260,7 @@ const HomeScreen: React.FC = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.productsContainer}
+              scrollEnabled={false}
             />
           ) : (
             <View style={styles.emptyState}>
@@ -225,7 +273,7 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Pharmacies à proximité</Text>
           {loadingPharmacies ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#16a34a" />
+              <ActivityIndicator size="large" color="#2563eb" />
             </View>
           ) : pharmacies.length > 0 ? (
             <FlatList
@@ -268,13 +316,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0f172a',
   },
-  greetingTime: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
-  },
   notificationButton: {
     padding: 8,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#dc2626',
   },
   locationChip: {
     flexDirection: 'row',
@@ -295,11 +348,17 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     fontWeight: '500',
   },
-  searchBar: {
+  searchRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
     marginBottom: 24,
+    gap: 10,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
@@ -311,6 +370,14 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     color: '#94a3b8',
+  },
+  cameraButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   section: {
     marginBottom: 24,
@@ -325,10 +392,12 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     paddingHorizontal: 16,
     gap: 12,
+    justifyContent: 'space-between',
   },
   categoryChip: {
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   categoryIcon: {
     width: 56,
@@ -338,10 +407,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryName: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#1e293b',
     fontWeight: '500',
-    width: 60,
     textAlign: 'center',
   },
   productsContainer: {
@@ -382,24 +450,11 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginBottom: 8,
   },
-  productFooter: {
-    marginBottom: 8,
-  },
   productPrice: {
     fontSize: 14,
     fontWeight: '700',
     color: '#2563eb',
-    marginBottom: 4,
-  },
-  rating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
+    marginBottom: 8,
   },
   addButton: {
     paddingVertical: 6,
@@ -423,10 +478,12 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   pharmacyHeader: {
+    marginBottom: 8,
+  },
+  pharmacyTitleSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   pharmacyName: {
     fontSize: 15,
@@ -446,6 +503,12 @@ const styles = StyleSheet.create({
   pharmacyAddress: {
     fontSize: 12,
     color: '#64748b',
+    marginBottom: 6,
+  },
+  pharmacyDistance: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
   },
   loadingContainer: {
     marginHorizontal: 16,

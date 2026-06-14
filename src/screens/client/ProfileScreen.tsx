@@ -9,8 +9,27 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { MapPin, Bell, Settings, HelpCircle, Info, FileText, LogOut } from 'lucide-react-native';
+import {
+  MapPin,
+  Camera,
+  Shield,
+  Bell,
+  Settings,
+  HelpCircle,
+  Info,
+  FileText,
+  LogOut,
+  Sun,
+} from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
+
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  onPress: () => void;
+}
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -46,44 +65,82 @@ const ProfileScreen: React.FC = () => {
     ? profile.full_name.charAt(0).toUpperCase()
     : 'C';
 
-  const menuItems = [
+  const section1Items: MenuItem[] = [
     {
       id: 'addresses',
       label: 'Mes adresses',
-      icon: MapPin,
-      onPress: () => {},
+      icon: <MapPin size={20} color="#2563eb" strokeWidth={1.5} />,
+      color: '#2563eb',
+      onPress: () => Alert.alert('Mes adresses', 'Gérez vos adresses de livraison'),
     },
+    {
+      id: 'prescription',
+      label: 'Scan d\'ordonnance',
+      icon: <Camera size={20} color="#7c3aed" strokeWidth={1.5} />,
+      color: '#7c3aed',
+      onPress: () => navigation.navigate('Ordonnance'),
+    },
+    {
+      id: 'insurance',
+      label: 'Assurance maladie',
+      icon: <Shield size={20} color="#16a34a" strokeWidth={1.5} />,
+      color: '#16a34a',
+      onPress: () => Alert.alert('Assurance maladie', 'Gérez vos informations d\'assurance'),
+    },
+  ];
+
+  const section2Items: MenuItem[] = [
     {
       id: 'notifications',
       label: 'Notifications',
-      icon: Bell,
-      onPress: () => {},
+      icon: <Bell size={20} color="#dc2626" strokeWidth={1.5} />,
+      color: '#dc2626',
+      onPress: () => Alert.alert('Notifications', 'Gérez vos préférences de notification'),
     },
     {
       id: 'settings',
       label: 'Paramètres',
-      icon: Settings,
-      onPress: () => {},
+      icon: <Settings size={20} color="#64748b" strokeWidth={1.5} />,
+      color: '#64748b',
+      onPress: () => Alert.alert('Paramètres', 'Accédez aux paramètres'),
     },
   ];
 
-  const infoItems = [
+  const section3Items: MenuItem[] = [
     {
       id: 'faq',
       label: 'FAQ',
-      onPress: () => {},
+      icon: <HelpCircle size={20} color="#f59e0b" strokeWidth={1.5} />,
+      color: '#f59e0b',
+      onPress: () => Alert.alert('FAQ', 'Questions fréquemment posées'),
     },
     {
       id: 'about',
       label: 'À propos',
-      onPress: () => {},
+      icon: <Info size={20} color="#2563eb" strokeWidth={1.5} />,
+      color: '#2563eb',
+      onPress: () => Alert.alert('À propos', 'À propos de MediDom'),
     },
     {
       id: 'terms',
-      label: 'Conditions d\'utilisation',
-      onPress: () => {},
+      label: 'CGU',
+      icon: <FileText size={20} color="#7c3aed" strokeWidth={1.5} />,
+      color: '#7c3aed',
+      onPress: () => Alert.alert('CGU', 'Conditions générales d\'utilisation'),
     },
   ];
+
+  const renderMenuItem = (item: MenuItem) => (
+    <TouchableOpacity
+      key={item.id}
+      style={styles.menuItem}
+      onPress={item.onPress}
+    >
+      {item.icon}
+      <Text style={styles.menuItemText}>{item.label}</Text>
+      <Text style={styles.menuItemArrow}>›</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,35 +165,18 @@ const ProfileScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Paramètres</Text>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.menuItem}
-                onPress={item.onPress}
-              >
-                <Icon size={20} color="#2563eb" strokeWidth={1.5} />
-                <Text style={styles.menuItemText}>{item.label}</Text>
-                <Text style={styles.menuItemArrow}>›</Text>
-              </TouchableOpacity>
-            );
-          })}
+          <Text style={styles.sectionTitle}>Mon compte</Text>
+          {section1Items.map(renderMenuItem)}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Préférences</Text>
+          {section2Items.map(renderMenuItem)}
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informations</Text>
-          {infoItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.menuItem}
-              onPress={item.onPress}
-            >
-              <Text style={styles.menuItemText}>{item.label}</Text>
-              <Text style={styles.menuItemArrow}>›</Text>
-            </TouchableOpacity>
-          ))}
+          {section3Items.map(renderMenuItem)}
         </View>
 
         <TouchableOpacity
@@ -148,7 +188,7 @@ const ProfileScreen: React.FC = () => {
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Pharmacie à Domicile v1.0</Text>
+          <Text style={styles.footerText}>MediDom Pharmacy v1.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
