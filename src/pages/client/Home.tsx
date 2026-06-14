@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, ShoppingBag, Star, ChevronRight, MapPin, Clock, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../apps/client/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import { formatXOF } from '../../lib/utils'
 

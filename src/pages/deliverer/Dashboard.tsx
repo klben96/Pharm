@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Package, ChevronRight, ToggleLeft, ToggleRight, Clock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../apps/deliverer/AuthContext'
 import { formatXOF, ORDER_STATUSES } from '../../lib/utils'
 
 export default function DelivererDashboard() {

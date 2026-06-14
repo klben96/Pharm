@@ -1,6 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Users, ClipboardList, Building2, LogOut } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../apps/admin/AuthContext'
 
 export default function AdminLayout() {
   const { signOut } = useAuth()

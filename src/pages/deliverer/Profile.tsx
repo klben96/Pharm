@@ -1,5 +1,5 @@
-import { useAuth } from '../../contexts/AuthContext'
-import { LogOut, Truck } from 'lucide-react'
+import { useAuth } from '../../apps/deliverer/AuthContext'
+import { LogOut, Truck, ExternalLink } from 'lucide-react'
 
 export default function DelivererProfile() {
   const { profile, signOut } = useAuth()
@@ -16,9 +16,15 @@ export default function DelivererProfile() {
           <div>
             <h2 className="text-white font-bold text-lg">{profile?.full_name}</h2>
             <p className="text-accent-200 text-sm">{profile?.phone}</p>
-            <span className="inline-block mt-1.5 bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Livreur</span>
+            <span className="inline-block mt-1.5 bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">🛵 Livreur</span>
           </div>
         </div>
+        <a href="/" className="w-full bg-white rounded-2xl shadow-card p-4 flex items-center gap-3 hover:bg-gray-50 transition">
+          <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ExternalLink size={17} className="text-slate-600" />
+          </div>
+          <span className="flex-1 text-[14px] font-medium text-gray-800">Portail des applications</span>
+        </a>
         <button onClick={signOut} className="w-full bg-red-50 border border-red-100 text-red-600 font-semibold py-4 rounded-2xl flex items-center justify-center gap-2">
           <LogOut size={18} /> Déconnexion
         </button>

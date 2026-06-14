@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { TrendingUp, ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../apps/deliverer/AuthContext'
 import { formatXOF, formatDateShort } from '../../lib/utils'
 
 export default function DelivererEarnings() {

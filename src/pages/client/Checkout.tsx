@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, MapPin, Phone, CreditCard, Camera, CheckCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCart } from '../../contexts/CartContext'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../apps/client/AuthContext'
 import { formatXOF } from '../../lib/utils'
 
 const PAYMENT_METHODS = [
